@@ -13,6 +13,7 @@
 // Needed to obtain the Navigation Controller
 #import "AppDelegate.h"
 #import "SimpleAudioEngine.h"
+#import "GameOverLayer.h"
 
 #pragma mark - HelloWorldLayer
 
@@ -20,6 +21,7 @@
 @implementation HelloWorldLayer{
     NSMutableArray * _monsters;
     NSMutableArray * _projectiles;
+    int _monstersDestroyed;
 }
 
 // Helper class method that creates a Scene with the HelloWorldLayer as the only child.
@@ -55,9 +57,12 @@
 
         _monsters = [[NSMutableArray alloc] init];
         _projectiles = [[NSMutableArray alloc] init];
+
+        _monstersDestroyed = 0;
         [self schedule:@selector(update:)];
 
         [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"background-music-aac.caf"];
+
     }
     return self;
 }
@@ -109,6 +114,8 @@
     CCCallBlockN * actionMoveDone = [CCCallBlockN actionWithBlock:^(CCNode *node) {
         [node removeFromParentAndCleanup:YES];
         [_monsters removeObject:node];
+        CCScene *gameOverScene = [GameOverLayer sceneWithWon:NO];
+        [[CCDirector sharedDirector] replaceScene:gameOverScene];
     }];
     [monster runAction:[CCSequence actions:actionMove, actionMoveDone, nil]];
     monster.tag = 1;
@@ -182,12 +189,16 @@
         if (monstersToDelete.count > 0) {
             [projectilesToDelete addObject:projectile];
         }
-
     }
 
     for (CCSprite *projectile in projectilesToDelete) {
         [_projectiles removeObject:projectile];
         [self removeChild:projectile cleanup:YES];
+        _monstersDestroyed++;
+        if (_monstersDestroyed > 5) {
+            CCScene *gameOverScene = [GameOverLayer sceneWithWon:YES];
+            [[CCDirector sharedDirector] replaceScene:gameOverScene];
+        }
     }
 }
 
